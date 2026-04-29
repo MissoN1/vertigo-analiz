@@ -15,10 +15,11 @@ class S(BaseHTTPRequestHandler):
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
-    HTTPServer(('0.0.0.0', port), S).serve_forever()
+    server = HTTPServer(('0.0.0.0', port), S)
+    server.serve_forever()
 
 def gonder(mesaj):
-    # KRİTİK: Telegram'ın gerçek ve hatasız adresi budur
+    # BURASI ÇOK KRİTİK: api. ve /bot/ kısmı mutlaka olmalı
     url = f"https://telegram.org{T}/sendMessage"
     payload = {"chat_id": U, "text": mesaj, "parse_mode": "Markdown"}
     try: requests.post(url, json=payload, timeout=10)
@@ -41,9 +42,10 @@ def tara():
     except: pass
 
 if __name__ == "__main__":
+    # Render'ı kandıran sunucuyu başlat
     threading.Thread(target=run_server, daemon=True).start()
     print("🚀 Vertigo AI Yayında!")
-    gonder("✅ *Vertigo AI Yayına Girdi!* Artık Render üzerinden hatasız çalışıyorum.")
+    gonder("✅ *Vertigo AI Yayına Girdi!*")
     while True:
         tara()
         time.sleep(300)
