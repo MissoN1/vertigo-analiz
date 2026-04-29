@@ -1,29 +1,58 @@
-import requests, time, threading
+import requests
+import time
+import threading
+import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# --- AYARLARIN ---
-T, U, K = "8609069597:AAHih02l6YvPZudU6fET6LLQx9LOSIGjdaw", "5152977214", "4cf7b1ef28msha505e3056cd48f6p110e8djsnd6c3f7ee3424"
+# --- AYARLAR ---
+T = "8609069597:AAHih02l6YvPZudU6fET6LLQx9LOSIGjdaw"
+U = "5152977214"
+K = "4cf7b1ef28msha505e3056cd48f6p110e8djsnd6c3f7ee3424"
+HOST = "://rapidapi.com"
+
 hafiza = set()
 
-# --- RENDER İÇİN UYKU ENGELLEYİCİ ---
-class S(BaseHTTPRequestHandler):
-    def do_GET(self): self.send_response(200); self.end_headers(); self.wfile.write(b"OK")
+# --- RENDER'I KANDIRAN KÜÇÜK SUNUCU ---
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Vertigo Bot Aktif")
 
-def g(m): requests.post(f"https://telegram.org{T}/sendMessage", json={"chat_id":U,"text":m,"parse_mode":"Markdown"})
+def run_server():
+    # Render'ın beklediği portu (10000) açıyoruz
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    server.serve_forever()
+
+def gonder(mesaj):
+    url = f"https://telegram.org{T}/sendMessage"
+    payload = {"chat_id": U, "text": mesaj, "parse_mode": "Markdown"}
+    try: requests.post(url, json=payload, timeout=10)
+    except: pass
 
 def tara():
+    url = f"https://{HOST}/v3/fixtures"
+    headers = {"x-rapidapi-key": K, "x-rapidapi-host": HOST}
+    params = {"live": "all"}
     try:
-        res = requests.get("https://rapidapi.com", headers={"x-rapidapi-key":K,"x-rapidapi-host":"://rapidapi.com"}, params={"live":"all"}).json()
-        for f in res.get("response", []):
+        response = requests.get(url, headers=headers, params=params, timeout=15)
+        fixtures = response.json().get("response", [])
+        for f in fixtures:
+            f_id = f["fixture"]["id"]
             dak = f["fixture"]["status"]["elapsed"]
-            if dak and ((15<=dak<=35) or (65<=dak<=80)):
+            if dak and ((15 <= dak <= 35) or (65 <= dak <= 80)):
                 h, a, skor = f["teams"]["home"]["name"], f["teams"]["away"]["name"], f"{f['goals']['home']}-{f['goals']['away']}"
-                if f"{f['fixture']['id']}_{skor}" not in hafiza:
-                    g(f"🔥 *Sinyal:* {h} {skor} {a} ({dak}')"); hafiza.add(f"{f['fixture']['id']}_{skor}")
+                if f"{f_id}_{skor}" not in hafiza:
+                    gonder(f"🎯 *Maç Takibi:* {h} {skor} {a} (Dakika: {dak})")
+                    hafiza.add(f"{f_id}_{skor}")
     except: pass
 
 if __name__ == "__main__":
-    # Port açarak Render'ı uyanık tutuyoruz
-    threading.Thread(target=lambda: HTTPServer(('0.0.0.0', 10000), S).serve_forever(), daemon=True).start()
-    g("✅ *Vertigo AI Yayına Girdi!*"); 
-    while True: tara(); time.sleep(300)
+    # Sunucuyu arka planda başlat (Render "Tamam" desin diye)
+    threading.Thread(target=run_server, daemon=True).start()
+    
+    gonder("✅ *Vertigo AI Analiz Yayına Girdi!*")
+    while True:
+        tara()
+        time.sleep(300)
