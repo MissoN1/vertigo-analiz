@@ -1,3 +1,4 @@
+
 import requests
 import time
 import threading
@@ -12,15 +13,15 @@ HOST = "://rapidapi.com"
 
 hafiza = set()
 
-# --- RENDER'I KANDIRAN KÜÇÜK SUNUCU ---
+# --- RENDER'IN BEKLEDİĞİ PORTU AÇAN KISIM ---
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Vertigo Bot Aktif")
+        self.wfile.write(b"Bot Aktif")
 
 def run_server():
-    # Render'ın beklediği portu (10000) açıyoruz
+    # Render'ın otomatik atadığı portu alıyoruz
     port = int(os.environ.get("PORT", 10000))
     server = HTTPServer(('0.0.0.0', port), SimpleHandler)
     server.serve_forever()
@@ -41,18 +42,21 @@ def tara():
         for f in fixtures:
             f_id = f["fixture"]["id"]
             dak = f["fixture"]["status"]["elapsed"]
+            # Senin Stratejin: 15-35 ve 65-80 arası
             if dak and ((15 <= dak <= 35) or (65 <= dak <= 80)):
                 h, a, skor = f["teams"]["home"]["name"], f["teams"]["away"]["name"], f"{f['goals']['home']}-{f['goals']['away']}"
                 if f"{f_id}_{skor}" not in hafiza:
-                    gonder(f"🎯 *Maç Takibi:* {h} {skor} {a} (Dakika: {dak})")
+                    gonder(f"🎯 *Sinyal:* {h} {skor} {a} (Dakika: {dak}')")
                     hafiza.add(f"{f_id}_{skor}")
     except: pass
 
 if __name__ == "__main__":
-    # Sunucuyu arka planda başlat (Render "Tamam" desin diye)
+    # Render'ın "uykuya dalmasını" engelleyen sunucuyu başlat
     threading.Thread(target=run_server, daemon=True).start()
     
-    gonder("✅ *Vertigo AI Analiz Yayına Girdi!*")
+    print("🚀 Sistem Başlatıldı!")
+    gonder("✅ *Vertigo AI Analiz Yayında!* Sistem başarıyla kuruldu.")
+    
     while True:
         tara()
         time.sleep(300)
