@@ -1,7 +1,7 @@
 import requests, time, threading, os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# --- TÜM HATALARI GİDERİLMİŞ KESİN KOD ---
+# --- AYARLAR ---
 T = "8603872966:AAEdfu11dx-_-edpywbFKT2yqA7IRg5cO3o"
 U = "5152977214"
 K = "4cf7b1ef28msha505e3056cd48f6p110e8djsnd6c3f7ee3424"
@@ -26,10 +26,13 @@ def tara():
             if dak and ((15 <= dak <= 35) or (65 <= dak <= 80)):
                 h, a, skor = f["teams"]["home"]["name"], f["teams"]["away"]["name"], f"{f['goals']['home']}-{f['goals']['away']}"
                 if f"{f['fixture']['id']}_{skor}" not in hafiza:
-                    gonder(f"🔥 *SİNYAL:* {h} {skor} {a} ({dak}')")
+                    gonder(f"🎯 *SİNYAL:* {h} {skor} {a} ({dak}')")
                     hafiza.add(f"{f['fixture']['id']}_{skor}")
     except: pass
 
 if __name__ == "__main__":
     threading.Thread(target=lambda: HTTPServer(('0.0.0.0', int(os.environ.get("PORT", 10000))), S).serve_forever(), daemon=True).start()
-    gonder("✅ *Vertigo AI Yayına Girdi!*")
+    gonder("✅ *Sistem Baslatildi!*")
+    while True:
+        tara()
+        time.sleep(300)
