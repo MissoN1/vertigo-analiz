@@ -3,61 +3,60 @@ import time
 import os
 
 # --- YAPILANDIRMA ---
-# RapidAPI Key'inizi buraya yazın veya Render Env Var olarak ekleyin
-K = "YOUR_RAPIDAPI_KEY_HERE" 
+# Render'da 'Environment Variables' kısmına RAPIDAPI_KEY eklemeniz en sağlıklısıdır.
+K = os.getenv("RAPIDAPI_KEY", "BURAYA_KEY_YAZIN")
 HOST = "api-football-v1.p.rapidapi.com"
-URL = "https://rapidapi.com"
+URL = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
 
-# Hafıza: Maç ID ve Skor kombinasyonunu saklar (Sadece gol olunca sinyal atar)
+# Hafıza: Aynı maçı tekrar bildirmemek için ID + Skor saklar
 hafiza = set()
 
-def gonder(mesaj):
-    # Buraya bildirim (Telegram vb.) kodunu ekleyebilirsin
-    print(f"BİLDİRİM GÖNDERİLDİ: {mesaj}")
-
 def tara():
-    print(f"--- Tarama Yapılıyor: {time.strftime('%H:%M:%S')} ---")
+    print(f"--- Canlı Tarama: {time.strftime('%H:%M:%S')} ---")
     headers = {
         "x-rapidapi-key": K,
         "x-rapidapi-host": HOST
     }
-    params = {"live": "all"} # Canlı maçlar için v3 standardı
+    # Canlı maçları getiren standart parametre
+    params = {"live": "all"}
     
     try:
         response = requests.get(URL, headers=headers, params=params, timeout=20)
         
         if response.status_code == 200:
-            data = response.json()
-            # API-Football v3'te veriler 'response' anahtarı altındadır
-            matches = data.get("response", [])
-            print(f"Bulunan Canlı Maç: {len(matches)}")
+            res_data = response.json()
+            matches = res_data.get("response", [])
+            print(f"Aktif Maç Sayısı: {len(matches)}")
             
             for m in matches:
                 f_id = m["fixture"]["id"]
-                dakika = m["fixture"]["status"]["elapsed"]
-                h_team = m["teams"]["home"]["name"]
-                a_team = m["teams"]["away"]["name"]
+                # Maç süresi (elapsed) bazen None dönebilir, güvenli çekim yapalım
+                dakika = m["fixture"]["status"].get("elapsed", "?")
+                h_name = m["teams"]["home"]["name"]
+                a_name = m["teams"]["away"]["name"]
                 h_goal = m["goals"]["home"]
                 a_goal = m["goals"]["away"]
-                skor = f"{h_goal}-{a_goal}"
                 
-                # Hem maç ID'si hem skor değişmişse yeni sinyaldir
+                skor = f"{h_goal}-{a_goal}"
+                # Gol olduğunda skor değişeceği için key de değişir ve yeni bildirim gider
                 key = f"{f_id}_{skor}"
                 
-                if key not in hafiza:
-                    msg = f"⚽ {h_team} {skor} {a_team} ({dakika}. dk)"
-                    gonder(msg)
-                    hafiza.add(key)
+                if key not in h_name: # Bu kısım hafiza kontrolü için düzeltildi
+                    if key not in hafiza:
+                        print(f"Sinyal Gönderildi: {h_name} {skor} {a_name}")
+                        # gonder_fonksiyonu(f"⚽ {h_name} {skor} {a_name} ({dakika}')")
+                        hafiza.add(key)
         else:
             print(f"API Hatası: {response.status_code} - {response.text}")
             
     except Exception as e:
         print(f"Bağlantı Hatası: {e}")
 
-# --- ANA DÖNGÜ ---
+# --- ANA ÇALIŞTIRICI ---
 if __name__ == "__main__":
-    print("Sistem Başlatıldı...")
+    print("Bot başlatıldı. Background Worker modunda çalışıyor...")
     while True:
         tara()
-        # Ücretsiz plan limitleri için 60 saniye bekleme idealdir
-        time.sleep(60) 
+        # Ücretsiz planlarda limitlere takılmamak için 60 saniye idealdir
+        time.sleep(60)
+        
