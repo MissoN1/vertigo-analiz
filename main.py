@@ -1,7 +1,7 @@
 import requests, time, threading, os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# --- GÜNCEL AYARLARIN ---
+# --- GÜNCEL AYARLAR ---
 T = "8603872966:AAEdfu11dx-_-edpywbFKT2yqA7IRg5cO3o"
 U = "5152977214"
 K = "4cf7b1ef28msha505e3056cd48f6p110e8djsnd6c3f7ee3424"
@@ -12,15 +12,13 @@ class S(BaseHTTPRequestHandler):
     def do_HEAD(self): self.send_response(200); self.end_headers()
 
 def gonder(mesaj):
-    # Telegram adresi düzeltildi
     url = f"https://telegram.org{T}/sendMessage"
     try: requests.post(url, json={"chat_id": U, "text": mesaj, "parse_mode": "Markdown"}, timeout=10)
     except: pass
 
 def tara():
-    # Maç verisi adresi düzeltildi
     url = "https://rapidapi.com"
-    headers = {"x-rapidapi-key": K, "x-rapidapi-host": "api-football-v1.p.rapidapi.com"}
+    headers = {"x-rapidapi-key": K, "x-rapidapi-host": "://rapidapi.com"}
     try:
         res = requests.get(url, headers=headers, params={"live": "all"}, timeout=15).json()
         for f in res.get("response", []):
@@ -29,17 +27,12 @@ def tara():
                 h, a, skor = f["teams"]["home"]["name"], f["teams"]["away"]["name"], f"{f['goals']['home']}-{f['goals']['away']}"
                 key = f"{f['fixture']['id']}_{skor}"
                 if key not in hafiza:
-                    msg = (f"🔥 *VERTIGO ANALİZ SİNYALİ*\n\n"
-                           f"🏟 *Maç:* {h} - {a}\n"
-                           f"⏱ *Dakika:* {dak}' | *Skor:* {skor}\n"
-                           f"💡 *Öneri:* Gol Baskısı Arttı!")
+                    msg = f"🔥 *VERTIGO ANALİZ*\n\n🏟 *Maç:* {h} - {a}\n⏱ *Dak:* {dak}' | *Skor:* {skor}\n💡 *Öneri:* Gol Yakın!"
                     gonder(msg)
                     hafiza.add(key)
     except: pass
 
 if __name__ == "__main__":
     threading.Thread(target=lambda: HTTPServer(('0.0.0.0', int(os.environ.get("PORT", 10000))), S).serve_forever(), daemon=True).start()
-    gonder("✅ *Vertigo AI Yayına Girdi!* Artık sinyalleri buradan alacaksın.")
-    while True:
-        tara()
-        time.sleep(300)
+    gonder("✅ *Vertigo AI Yayına Girdi!*") 
+    while True: tara(); time.sleep(300)
