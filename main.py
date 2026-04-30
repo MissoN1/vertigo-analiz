@@ -1,25 +1,18 @@
-import requests
 
-# --- TELEGRAM BİLGİLERİN ---
-TOKEN = "BOT_TOKEN_BURAYA"  # BotFather'dan aldığın kod
-CHAT_ID = "CHAT_ID_BURAYA"  # Kendi kullanıcı ID'n
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-def test_mesaji_gonder(mesaj):
-    url = f"https://telegram.org{TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": mesaj,
-        "parse_mode": "Markdown"
-    }
-    try:
-        response = requests.post(url, json=payload)
-        if response.status_code == 200:
-            print("✅ Test mesajı Telegram'a başarıyla gönderildi!")
-        else:
-            print(f"❌ Hata oluştu: {response.text}")
-    except Exception as e:
-        print(f"⚠️ Bağlantı hatası: {e}")
+# BotFather'dan aldığın token'ı buraya yapıştır
+TOKEN = 'BURAYA_TOKEN_GELECEK'
 
-if __name__ == "__main__":
-    print("Telegram testi başlatılıyor...")
-    test_mesaji_gonder("🚀 *Bot Test Mesajı:* Selam! Eğer bu mesajı görüyorsan bağlantı tamamdır.")
+async def merhaba(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(f'Selam {update.effective_user.first_name}! Kanalın için hazır mısın?')
+
+if __name__ == '__main__':
+    app = ApplicationBuilder().token(TOKEN).build()
+    
+    # /merhaba komutunu tanımlıyoruz
+    app.add_handler(CommandHandler("merhaba", merhaba))
+    
+    print("Bot çalışıyor...")
+    app.run_polling()
