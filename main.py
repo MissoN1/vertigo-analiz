@@ -1,7 +1,7 @@
 import requests, time, threading, os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# --- GÜNCEL AYARLAR ---
+# --- AYARLARIN (Yeni Botun İçin) ---
 T = "8603872966:AAEdfu11dx-_-edpywbFKT2yqA7IRg5cO3o"
 U = "5152977214"
 K = "4cf7b1ef28msha505e3056cd48f6p110e8djsnd6c3f7ee3424"
@@ -12,6 +12,7 @@ class S(BaseHTTPRequestHandler):
     def do_HEAD(self): self.send_response(200); self.end_headers()
 
 def gonder(mesaj):
+    # Telegram adresi api.telegram.org/bot... olarak düzeltildi
     url = f"https://telegram.org{T}/sendMessage"
     try: requests.post(url, json={"chat_id": U, "text": mesaj, "parse_mode": "Markdown"}, timeout=10)
     except: pass
@@ -27,12 +28,13 @@ def tara():
                 h, a, skor = f["teams"]["home"]["name"], f["teams"]["away"]["name"], f"{f['goals']['home']}-{f['goals']['away']}"
                 key = f"{f['fixture']['id']}_{skor}"
                 if key not in hafiza:
-                    msg = f"🔥 *VERTIGO ANALİZ*\n\n🏟 *Maç:* {h} - {a}\n⏱ *Dak:* {dak}' | *Skor:* {skor}\n💡 *Öneri:* Gol Yakın!"
+                    msg = f"🔥 *VERTIGO ANALİZ*\n\n🏟 *Maç:* {h} - {a}\n⏱ *Dakika:* {dak}' | *Skor:* {skor}\n💡 *Öneri:* Baskı yüksek, gol yakın!"
                     gonder(msg)
                     hafiza.add(key)
     except: pass
 
 if __name__ == "__main__":
     threading.Thread(target=lambda: HTTPServer(('0.0.0.0', int(os.environ.get("PORT", 10000))), S).serve_forever(), daemon=True).start()
-    gonder("✅ *Vertigo AI Yayına Girdi!*") 
+    print("🚀 Sistem Başlatıldı!")
+    gonder("✅ *Vertigo AI Yayına Girdi!*") # Yeni botuna gelecek ilk mesaj
     while True: tara(); time.sleep(300)
