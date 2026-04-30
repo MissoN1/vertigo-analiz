@@ -1,4 +1,3 @@
-
 import requests, time, threading, os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -12,57 +11,64 @@ class S(BaseHTTPRequestHandler):
     def do_GET(self): 
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Sistem Aktif")
+        self.wfile.write(b"Sistem Calisiyor")
 
 def gonder(mesaj):
-    url = f"https://telegram.org{T}/sendMessage"
+    url = f"https://api.telegram.org/bot{T}/sendMessage"
+    payload = {"chat_id": U, "text": mesaj, "parse_mode": "Markdown"}
     try: 
-        requests.post(url, json={"chat_id": U, "text": mesaj, "parse_mode": "Markdown"}, timeout=10)
+        r = requests.post(url, json=payload, timeout=10)
+        print(f"Telegram Yanıtı: {r.status_code}")
     except Exception as e: 
         print(f"Telegram Hatası: {e}")
 
 def tara():
+    print("Maçlar taranıyor...")
     try:
         url = "https://rapidapi.com"
-        headers = {
-            "x-rapidapi-key": K, 
-            "x-rapidapi-host": "://rapidapi.com"
-        }
-        # TEST İÇİN: 120 saniyede bir (2 dakika) kontrol uygundur
+        headers = {"x-rapidapi-key": K, "x-rapidapi-host": "://rapidapi.com"}
         res = requests.get(url, headers=headers, params={"live": "all"}, timeout=15).json()
         
-        if "response" not in res or not res["response"]:
-            print("Canlı maç bulunamadı veya API boş döndü.")
-            return
+        matches = res.get("response", [])
+        print(f"Bulunan canlı maç sayısı: {len(matches)}")
 
-        for f in res["response"]:
-            status = f.get("fixture", {}).get("status", {})
-            dak = status.get("elapsed")
-            fid = f["fixture"]["id"]
-            
-            # Sinyal Kriteri: 15-35 veya 65-80 arası
-            if dak and ((15 <= dak <= 35) or (65 <= dak <= 80)):
-                h = f["teams"]["home"]["name"]
-                a = f["teams"]["away"]["name"]
-                skor = f"{f['goals']['home']}-{f['goals']['away']}"
-                lig = f["league"]["name"]
+        for f in matches:
+            try:
+                dak = f["fixture"]["status"]["elapsed"]
+                fid = f["fixture"]["id"]
                 
-                key = f"{fid}_{skor}"
-                if key not in hafiza:
-                    msg = f"⚽ *SİNYAL BULUNDU*\n🏆 {lig}\n🏟️ {h} {skor} {a}\n⏰ Dakika: {dak}'"
-                    gonder(msg)
-                    hafiza.add(key)
+                # Eğer o an kriterlere uygun maç varsa:
+                if dak and ((15 <= dak <= 35) or (65 <= dak <= 80)):
+                    h = f["teams"]["home"]["name"]
+                    a = f["teams"]["away"]["name"]
+                    skor = f"{f['goals']['home']}-{f['goals']['away']}"
                     
-                    if len(hafiza) > 500: hafiza.clear()
+                    # Sadece daha önce göndermediğimiz maç/skor kombinasyonunu gönder
+                    key = f"{fid}_{skor}"
+                    if key not in hafiza:
+                        msg = f"🎯 *YENİ SİNYAL*\n🏟️ {h} {skor} {a}\n⏰ Dakika: {dak}'"
+                        gonder(msg)
+                        hafiza.add(key)
+            except KeyError:
+                continue # Bazı veriler eksikse o maçı atla
+
+        # Hafıza yönetimi: Çok şişerse temizle (Günde bir kez gibi düşünebilirsin)
+        if len(hafiza) > 1000: hafiza.clear()
+
     except Exception as e: 
-        print(f"Tarama Hatası: {e}")
+        print(f"Tarama sırasında hata oluştu: {e}")
 
 if __name__ == "__main__":
-    # Render port ayarı
     port = int(os.environ.get("PORT", 10000))
     threading.Thread(target=lambda: HTTPServer(('0.0.0.0', port), S).serve_forever(), daemon=True).start()
     
-    gonder("✅ *Sistem Hatalardan Arındırıldı ve Başlatıldı!*")
+    gonder("✅ *Bot Aktif Edildi. Maçlar Bekleniyor...*")
     while True:
         tara()
-        time.sleep(120) 
+        time.sleep(120) # 2 dakikada bir kontrol idealdir
+
+
+
+
+
+
